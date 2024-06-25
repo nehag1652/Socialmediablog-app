@@ -1,6 +1,7 @@
 package com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.service;
 
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.dto.PostDto;
+import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.exceptions.ResourceNotFoundException;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.model.PostEntity;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,24 +28,24 @@ public class PostServiceImpl implements PostService{
         }
     }
 
-    private PostDto mapEntityToDto(PostEntity postEntity) {
-        PostDto postDto=new PostDto();
-        postDto.setId(postEntity.getId());
-        postDto.setDescription(postEntity.getDescription());
-        postDto.setDescription(postEntity.getContent());
-        postDto.setDescription(postEntity.getTitle());
-        return postDto;
-    }
+
 
     @Override
     public PostDto getPostById(Long id) {
-        return null;
+        PostEntity postEntity=postRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("post","id",String.valueOf(id)));
+        return mapEntityToDto(postEntity);
     }
+
+
 
     @Override
     public PostDto createPost(PostDto postDto) {
-        return null;
+        PostEntity savedPostEntity=mapDtoToEntity(postDto);
+        postRepository.save(savedPostEntity);
+        return mapEntityToDto(savedPostEntity);
     }
+
+
 
     @Override
     public PostDto updatePostById(PostDto postDto,Long id) {
@@ -53,6 +54,27 @@ public class PostServiceImpl implements PostService{
 
     @Override
     public void deletePostById(Long id) {
+
+    }
+
+
+    //Entity to Dto mapper
+    private PostDto mapEntityToDto(PostEntity postEntity) {
+        PostDto postDto=new PostDto();
+        postDto.setId(postEntity.getId());
+        postDto.setDescription(postEntity.getDescription());
+        postDto.setContent(postEntity.getContent());
+        postDto.setTitle(postEntity.getTitle());
+        return postDto;
+    }
+
+    //Dto to Entity mapper
+    private PostEntity mapDtoToEntity(PostDto postDto) {
+        PostEntity postEntity=new PostEntity();
+        postEntity.setDescription(postDto.getDescription());
+        postEntity.setContent(postDto.getContent());
+        postEntity.setTitle(postDto.getTitle());
+        return postEntity;
 
     }
 }
