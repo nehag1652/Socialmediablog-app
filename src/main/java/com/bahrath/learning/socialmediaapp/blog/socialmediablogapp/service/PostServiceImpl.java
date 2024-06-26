@@ -3,8 +3,13 @@ package com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.service;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.dto.PostDto;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.exceptions.ResourceNotFoundException;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.model.PostEntity;
+import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.payload.PostResponse;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
@@ -19,14 +24,59 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private PostRepository postRepository;
 
+
+
+//    @Override
+//    public PostResponse getAllPosts(int pageNo,int pageSize) {
+//       Pageable pageable= PageRequest.of(pageNo,pageSize);
+//        Page<PostEntity> postEntities = postRepository.findAll(pageable);
+//
+//        if (postEntities != null) {
+//            List<PostDto> postDtoList=postEntities.stream().map(postEntity -> mapEntityToDto(postEntity))
+//                    .collect(Collectors.toList());
+//
+//            PostResponse postResponse=PostResponse.builder().content(postDtoList)
+//                    .pageNo(postEntities.getNumber())
+//                    .pageSize(postEntities.getSize())
+//                    .totalPage(postEntities.getTotalPages())
+//                    .totalElements((int) postEntities.getTotalElements())
+//                    .isLastPage(postEntities.isLast()).build();
+//            return postResponse;
+//        }
+//
+//        return null;
+//
+//    }
+
     @Override
-    public List<PostDto> getAllPosts() {
-        List<PostEntity> postEntities = postRepository.findAll();
-        if (postEntities != null) {
-            return postEntities.stream().map(postEntity -> mapEntityToDto(postEntity)).collect(Collectors.toList());
-        } else {
-            return null;
+    public PostResponse getAllPosts(int pageNo,int pageSize,String sortBy,String sortDirection) {
+        Pageable pageable=null;
+
+        if(sortBy!=null && sortDirection!=null){
+            Sort sort=sortDirection.equalsIgnoreCase("Asc")? Sort.by(sortBy).ascending():
+                    Sort.by(sortBy).descending();
+         pageable= PageRequest.of(pageNo,pageSize,sort);
         }
+        else{
+            pageable= PageRequest.of(pageNo,pageSize);
+        }
+        Page<PostEntity> postEntities = postRepository.findAll(pageable);
+
+        if (postEntities != null) {
+            List<PostDto> postDtoList=postEntities.stream().map(postEntity -> mapEntityToDto(postEntity))
+                    .collect(Collectors.toList());
+
+            PostResponse postResponse=PostResponse.builder().content(postDtoList)
+                    .pageNo(postEntities.getNumber())
+                    .pageSize(postEntities.getSize())
+                    .totalPage(postEntities.getTotalPages())
+                    .totalElements((int) postEntities.getTotalElements())
+                    .isLastPage(postEntities.isLast()).build();
+            return postResponse;
+        }
+
+        return null;
+
     }
 
 
