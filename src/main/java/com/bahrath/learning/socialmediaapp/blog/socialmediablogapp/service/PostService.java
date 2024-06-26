@@ -12,7 +12,7 @@ public interface PostService {
 
    PostDto createPost(PostDto postDto);
 
-    PostDto updatePostById(PostDto postDto,Long id);
+    PostDto updatePostById(Long id,PostDto postDto);
 
    void deletePostById(Long id);
 

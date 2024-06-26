@@ -2,7 +2,6 @@ package com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.controller;
 
 
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.dto.PostDto;
-import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.model.PostEntity;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,6 +35,20 @@ public class PostController {
     public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto){
         PostDto savedPostDto= postService.createPost(postDto);
         return new ResponseEntity<>(savedPostDto, HttpStatus.CREATED);
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PostDto> updatePost(@PathVariable Long id,@RequestBody PostDto postDto){
+       PostDto updatedPostDto= postService.updatePostById(id,postDto);
+       return new ResponseEntity<>(updatedPostDto,HttpStatus.OK);
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deletePostById(@PathVariable Long id){
+        postService.deletePostById(id);
+        return new ResponseEntity<>("Deleted successfully post resource::"+id,HttpStatus.OK);
     }
 
 }
