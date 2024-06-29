@@ -4,12 +4,14 @@ package com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.dto;
 import lombok.Data;
 
 @Data
-public class PostDto {
+
+public class CommentDto {
 
     private Long id;
+    private String userName;
+    private String email;
+    private String body;
 
-    private String title;
-    private String description;
-    private String content;
+
 
 }
