@@ -6,12 +6,19 @@ import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.model.Comment
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.model.PostEntity;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.repository.CommentRepository;
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.repository.PostRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.JsonPatchException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,7 +43,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto getCommentByPostIdAndCommentId(Long postId, Long commentId) {
 
         CommentEntity commentEntity = commentRepository.findCommentByPostIdAndCommentId(postId, commentId)
-                .orElseThrow(()->new ResourceNotFoundException("comment","commentId",String.valueOf(commentId)));
+                .orElseThrow(() -> new ResourceNotFoundException("comment", "commentId", String.valueOf(commentId)));
         if (commentEntity != null) {
             return convertEntityToDto(commentEntity);
         } else {
@@ -47,7 +54,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentDto> getAllCommentsByPostId(Long postId) {
         List<CommentEntity> commentEntities = commentRepository.findByPostId(postId);
-        if(commentEntities != null && !commentEntities.isEmpty()){
+        if (commentEntities != null && !commentEntities.isEmpty()) {
             return commentEntities.stream().map(commentEntity -> convertEntityToDto(commentEntity))
                     .collect(Collectors.toList());
         }
@@ -84,6 +91,12 @@ public class CommentServiceImpl implements CommentService {
         CommentEntity commentEntityToBeUpdated = commentRepository.findCommentByPostIdAndCommentId(postId, commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", String.valueOf(commentId)));
 
+
+        //validate
+        if (!commentEntityToBeUpdated.getPostEntity().getId().equals(postId)) {
+            throw new RuntimeException("Bad Request::Comment Not Found!!");
+        }
+
         commentEntityToBeUpdated.setUserName(commentDto.getUserName());
         commentEntityToBeUpdated.setEmail(commentDto.getEmail());
         commentEntityToBeUpdated.setBody(commentDto.getBody());
@@ -103,12 +116,41 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteAllCommentsByPostId(Long postId) {
+        //List<CommentEntity> commentEntities= commentRepository.findByPostId(postId);
+        //if(commentEntities!=null) {
+        commentRepository.deleteByPostId(postId);
+       // }
+        }
 
-       List<CommentEntity> commentEntityList=commentRepository.findByPostId(postId);
-       if(commentEntityList!=null && !commentEntityList.isEmpty()){
-           commentRepository.deleteByPostId(postId);
-       }
+    @Override
+    public CommentDto updateCommentByCommentIdAndPostIdUsingJsonPatch(Long postId, Long commentId, JsonPatch jsonPatch) {
+        CommentEntity commentEntityToBeUpdated = commentRepository.findCommentByPostIdAndCommentId(postId, commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "commentId", String.valueOf(commentId)));
 
+        PostEntity postEntity = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "PostId", String.valueOf(postId)));
+
+        //validate
+        if (!commentEntityToBeUpdated.getPostEntity().getId().equals(postId)) {
+            throw new RuntimeException("Bad Request::Comment Not Found!!");
+        }
+
+        //convert entity to dto
+        CommentDto commentDto = convertEntityToDto(commentEntityToBeUpdated);
+
+        try {
+            commentDto = applyPatchToComment(jsonPatch, commentDto);
+        } catch (JsonPatchException e) {
+            throw new RuntimeException(e);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        CommentEntity patchedCommentEntity = convertDtoToEntity(commentDto);
+        patchedCommentEntity.setPostEntity(postEntity);
+        commentRepository.save(patchedCommentEntity);
+
+        return commentDto;
     }
 
 
@@ -131,6 +173,15 @@ public class CommentServiceImpl implements CommentService {
 
         CommentDto commentDto = modelMapper.map(commentEntity, CommentDto.class);
         return commentDto;
+    }
+
+
+    private CommentDto applyPatchToComment(JsonPatch jsonPatch, CommentDto commentDto) throws JsonPatchException, JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode commentDtoJsonNode = objectMapper.convertValue(commentDto, JsonNode.class);
+        JsonNode patchedJsonNode = jsonPatch.apply(commentDtoJsonNode);
+        return objectMapper.treeToValue(patchedJsonNode, CommentDto.class);
+
     }
 
 }

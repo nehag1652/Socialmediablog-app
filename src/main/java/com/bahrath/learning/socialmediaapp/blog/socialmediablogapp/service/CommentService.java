@@ -2,6 +2,7 @@ package com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.service;
 
 
 import com.bahrath.learning.socialmediaapp.blog.socialmediablogapp.dto.CommentDto;
+import com.github.fge.jsonpatch.JsonPatch;
 
 import java.util.List;
 
@@ -18,4 +19,6 @@ public interface CommentService {
    void deleteCommentByCommentId(Long commentId);
 
    void deleteAllCommentsByPostId(Long postId);
+
+  CommentDto updateCommentByCommentIdAndPostIdUsingJsonPatch(Long postId, Long commentId, JsonPatch jsonPatch);
 }
